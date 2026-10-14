@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d2b30">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mon coffre – suivi de métaux précieux</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9eeee; --surface:#f8faf9; --ink:#1d2b30; --muted:#5d6e73; --line:#cfd8d8;
+  --gain:#1f7a4d; --loss:#b3392f; --accent:#1d2b30; --on-accent:#f8faf9;
+  --or:#c79a1e; --argent:#9aa5ab; --platine:#6d93aa; --palladium:#9a82b0;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#121a1d; --surface:#1b272b; --ink:#e8efef; --muted:#94a5aa; --line:#2c3b40;
+    --gain:#4fc58a; --loss:#ee7a70; --accent:#e8efef; --on-accent:#121a1d; color-scheme:dark}
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font:400 16px/1.45 "Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 96px)}
+main{max-width:640px;margin:0 auto;padding:20px 16px}
+.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--platine);outline-offset:2px}
+
+.hero{padding:12px 0 20px}
+.hero small{color:var(--muted);font-size:14px}
+.total{font-size:clamp(40px,12vw,64px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:2px 0 8px}
+.delta{font-weight:700}
+.delta.up{color:var(--gain)} .delta.down{color:var(--loss)}
+
+.ingot{display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--line);margin:18px 0 10px;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.ingot span{display:block;min-width:2px;transition:flex-basis .35s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+
+section{margin-top:28px}
+h2{font-size:18px;margin:0 0 10px;font-weight:700}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+
+.spots{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);overflow:hidden}
+.spots label{background:var(--surface);padding:10px 12px;display:block;font-size:14px;color:var(--muted)}
+.spots input{display:block;width:100%;border:0;background:transparent;font-size:20px;font-weight:700;color:var(--ink);padding:2px 0;margin-top:2px}
+.spots input:focus{outline:none}
+.spots label:focus-within{box-shadow:inset 0 0 0 2px var(--platine)}
+.head{justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:nowrap}
+.head h2{margin:0}
+.ghost:disabled{opacity:.5;cursor:default}
+.hint{font-size:13px;color:var(--muted);margin:8px 2px 0}
+
+.item{display:grid;grid-template-columns:8px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;
+  background:none;border:0;border-bottom:1px solid var(--line);padding:14px 14px 14px 0}
+.item:last-child{border-bottom:0}
+.item:hover{background:rgba(127,127,127,.07)}
+.bar{align-self:stretch;border-radius:0 4px 4px 0}
+.item b{display:block;font-weight:700}
+.item small{color:var(--muted);font-size:14px}
+.item .r{text-align:right}
+.item .g{font-size:14px;font-weight:700}
+.empty{padding:28px 18px;color:var(--muted);text-align:center}
+
+.fab{position:fixed;right:max(16px,calc(50% - 304px));bottom:calc(env(safe-area-inset-bottom,0) + 20px);
+  background:var(--accent);color:var(--on-accent);border:0;border-radius:999px;padding:14px 22px;font-weight:700;
+  box-shadow:0 6px 18px rgba(0,0,0,.28)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:9px 14px;color:var(--ink)}
+
+dialog{border:0;border-radius:14px;padding:0;width:min(520px,94vw);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(10,18,20,.6)}
+dialog form{padding:20px;display:grid;gap:14px}
+dialog h3{margin:0;font-size:20px}
+.f{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+.f input,.f select{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);color:var(--ink);font-size:16px;width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.primary{background:var(--accent);color:var(--on-accent);border:0;border-radius:8px;padding:11px 20px;font-weight:700}
+.danger{color:var(--loss);margin-right:auto}
+footer{margin-top:36px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <small>Valeur du portefeuille</small>
+    <div class="total num" id="total">0 €</div>
+    <div class="delta num" id="delta"></div>
+    <div class="ingot" id="ingot" role="img" aria-label="Répartition par métal"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <section>
+    <div class="row head"><h2>Cours en direct</h2><button class="ghost" id="refreshBtn">Actualiser</button></div>
+    <div class="panel spots" id="spots"></div>
+    <p class="hint" id="spotHint">Chargement des cours…</p>
+  </section>
+
+  <section>
+    <h2>Mes pièces et lingots</h2>
+    <div class="panel" id="list"></div>
+  </section>
+
+  <footer class="row">
+    <button class="ghost" id="exportBtn">Exporter mes données</button>
+    <button class="ghost" id="importBtn">Importer une sauvegarde</button>
+    <input type="file" id="importFile" accept="application/json" hidden>
+  </footer>
+</main>
+
+<button class="fab" id="addBtn">+ Ajouter</button>
+
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <h3 id="dlgTitle">Ajouter une pièce</h3>
+    <label class="f">Modèle courant
+      <select id="preset"><option value="">Saisie manuelle</option></select>
+    </label>
+    <label class="f">Nom
+      <input id="name" required placeholder="Ex. : Napoléon 20 francs">
+    </label>
+    <div class="two">
+      <label class="f">Métal
+        <select id="metal"></select>
+      </label>
+      <label class="f">Quantité
+        <input id="qty" type="number" min="1" step="1" value="1" required inputmode="numeric">
+      </label>
+    </div>
+    <div class="two">
+      <label class="f">Poids unitaire
+        <input id="weight" type="number" min="0" step="any" required inputmode="decimal">
+      </label>
+      <label class="f">Unité
+        <select id="unit"><option value="g">grammes</option><option value="oz">onces troy</option></select>
+      </label>
+    </div>
+    <div class="two">
+      <label class="f">Titre (‰)
+        <input id="fineness" type="number" min="1" max="1000" step="any" value="999.9" required inputmode="decimal">
+      </label>
+      <label class="f">Prix d’achat total (€)
+        <input id="price" type="number" min="0" step="any" value="0" required inputmode="decimal">
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="ghost danger" id="delBtn" hidden>Supprimer</button>
+      <button type="button" class="ghost" id="cancelBtn">Annuler</button>
+      <button type="submit" class="primary" id="saveBtn">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  var OZ = 31.1034768;
+  var METALS = {
+    or:{label:'Or',color:'var(--or)'},
+    argent:{label:'Argent',color:'var(--argent)'},
+    platine:{label:'Platine',color:'var(--platine)'},
+    palladium:{label:'Palladium',color:'var(--palladium)'}
+  };
+  var PRESETS = [
+    {n:'Lingot or 1 oz',m:'or',w:31.1035,f:999.9},
+    {n:'Lingot or 100 g',m:'or',w:100,f:999.9},
+    {n:'Napoléon 20 francs',m:'or',w:6.4516,f:900},
+    {n:'Souverain',m:'or',w:7.98,f:916.7},
+    {n:'50 pesos Mexique',m:'or',w:41.67,f:900},
+    {n:'Krugerrand 1 oz',m:'or',w:33.93,f:916.7},
+    {n:'Maple Leaf or 1 oz',m:'or',w:31.1035,f:999.9},
+    {n:'Pièce argent 1 oz',m:'argent',w:31.1035,f:999},
+    {n:'Pièce argent 5 francs Hercule',m:'argent',w:25,f:900},
+    {n:'Lingot argent 1 kg',m:'argent',w:1000,f:999}
+  ];
+  var KEY = 'coffre.v1';
+  var fmt = new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+  var fmt2 = new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'});
+  var fmtN = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2});
+  var $ = function(id){return document.getElementById(id)};
+
+  var state = load();
+  function load(){
+    try{
+      var s = JSON.parse(localStorage.getItem(KEY));
+      if(s && s.items && s.spots) return s;
+    }catch(e){}
+    return {items:[],spots:{or:0,argent:0,platine:0,palladium:0},updated:null};
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+  function pureOz(it){
+    var g = it.unit==='oz' ? it.weight*OZ : it.weight;
+    return g*(it.fineness/1000)/OZ*it.qty;
+  }
+  function value(it){return pureOz(it)*(state.spots[it.metal]||0)}
+
+  function render(){
+    var total=0, paid=0, byMetal={};
+    state.items.forEach(function(it){
+      var v=value(it); total+=v; paid+=it.price;
+      byMetal[it.metal]=(byMetal[it.metal]||0)+v;
+    });
+    $('total').textContent = fmt.format(total);
+    var d=$('delta');
+    if(state.items.length && paid>0){
+      var diff=total-paid, pct=diff/paid*100;
+      d.className='delta num '+(diff>=0?'up':'down');
+      d.textContent=(diff>=0?'+':'−')+fmt.format(Math.abs(diff))+' ('+(diff>=0?'+':'−')+fmtN.format(Math.abs(pct))+' %) depuis l’achat';
+    }else{ d.className='delta'; d.textContent=''; }
+
+    var ing=$('ingot'), leg=$('legend'); ing.innerHTML=''; leg.innerHTML='';
+    Object.keys(METALS).forEach(function(k){
+      var v=byMetal[k]||0; if(!v) return;
+      var s=document.createElement('span');
+      s.style.flex='0 0 '+(total?v/total*100:0)+'%'; s.style.background=METALS[k].color;
+      ing.appendChild(s);
+      leg.insertAdjacentHTML('beforeend','<span><i style="background:'+METALS[k].color+'"></i>'+METALS[k].label+' '+Math.round(v/total*100)+' %</span>');
+    });
+    if(!total) leg.textContent = state.items.length ? 'Renseignez les cours pour voir la valeur.' : 'Aucune pièce pour le moment.';
+
+    var list=$('list');
+    if(!state.items.length){
+      list.innerHTML='<div class="empty">Votre coffre est vide. Touchez « Ajouter » pour saisir une pièce ou un lingot.</div>';
+    }else{
+      list.innerHTML=state.items.map(function(it,i){
+        var v=value(it), diff=v-it.price;
+        var g = it.price>0 && v>0 ? '<div class="g num" style="color:var(--'+(diff>=0?'gain':'loss')+')">'+(diff>=0?'+':'−')+fmt.format(Math.abs(diff))+'</div>' : '';
+        return '<button class="item" data-i="'+i+'"><span class="bar" style="background:'+METALS[it.metal].color+'"></span>'+
+          '<span><b>'+esc(it.name)+'</b><small class="num">'+it.qty+' × '+fmtN.format(it.weight)+' '+it.unit+' · '+fmtN.format(it.fineness)+' ‰ · payé '+fmt2.format(it.price)+'</small></span>'+
+          '<span class="r"><b class="num">'+fmt.format(v)+'</b>'+g+'</span></button>';
+      }).join('');
+    }
+  }
+
+  // Cours
+  var spots=$('spots');
+  Object.keys(METALS).forEach(function(k){
+    var l=document.createElement('label');
+    l.innerHTML=METALS[k].label+' (€/oz)<input type="number" min="0" step="any" inputmode="decimal" data-k="'+k+'" value="'+(state.spots[k]||'')+'" placeholder="0">';
+    spots.appendChild(l);
+  });
+  spots.addEventListener('input',function(e){
+    var k=e.target.dataset.k; if(!k) return;
+    state.spots[k]=parseFloat(e.target.value)||0;
+    state.updated=new Date().toISOString();
+    save(); render();
+    setStatus('Cours saisi à la main. Il sera remplacé à la prochaine actualisation en direct.');
+  });
+
+  // Cours en direct (USD par once troy, convertis en euros)
+  var SYM={or:'XAU',argent:'XAG',platine:'XPT',palladium:'XPD'};
+  var busy=false;
+  function getJSON(url){
+    return fetch(url,{cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+  }
+  function usdToEur(){
+    return getJSON('https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR')
+      .then(function(d){return d.rates.EUR})
+      .catch(function(){
+        return getJSON('https://open.er-api.com/v6/latest/USD').then(function(d){return d.rates.EUR});
+      });
+  }
+  function setStatus(msg,ok){
+    var h=$('spotHint'); h.textContent=msg; h.style.color = ok===false ? 'var(--loss)' : '';
+  }
+  function syncInputs(){
+    Array.prototype.forEach.call(spots.querySelectorAll('input'),function(i){
+      if(document.activeElement!==i) i.value=state.spots[i.dataset.k]||'';
+    });
+  }
+  function refresh(){
+    if(busy) return;
+    busy=true; $('refreshBtn').disabled=true;
+    var keys=Object.keys(SYM);
+    Promise.all([usdToEur()].concat(keys.map(function(k){
+      return getJSON('https://api.gold-api.com/price/'+SYM[k]).then(function(d){return d.price});
+    }))).then(function(res){
+      var eur=res[0], n=0;
+      keys.forEach(function(k,i){
+        var p=res[i+1]*eur;
+        if(isFinite(p) && p>0){ state.spots[k]=Math.round(p*100)/100; n++; }
+      });
+      if(!n) throw new Error('vide');
+      state.updated=new Date().toISOString();
+      save(); syncInputs(); render();
+      setStatus('Cours en direct (€ par once troy), actualisés à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.');
+    }).catch(function(){
+      var last = state.updated ? ' Derniers cours enregistrés : '+new Date(state.updated).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'.' : '';
+      setStatus('Cours en direct indisponibles pour le moment.'+last+' Vérifiez votre connexion, ou saisissez les cours à la main.',false);
+    }).then(function(){ busy=false; $('refreshBtn').disabled=false; });
+  }
+  $('refreshBtn').onclick=refresh;
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) refresh(); });
+  setInterval(function(){ if(!document.hidden) refresh(); },60000);
+  refresh();
+
+  // Formulaire
+  var dlg=$('dlg'), editing=null;
+  Object.keys(METALS).forEach(function(k){$('metal').add(new Option(METALS[k].label,k))});
+  PRESETS.forEach(function(p,i){$('preset').add(new Option(p.n,i))});
+  $('preset').addEventListener('change',function(){
+    var p=PRESETS[this.value]; if(!p) return;
+    $('name').value=p.n; $('metal').value=p.m; $('weight').value=p.w; $('unit').value='g'; $('fineness').value=p.f;
+  });
+  function openForm(i){
+    editing=i;
+    var it = i==null ? {name:'',metal:'or',qty:1,weight:'',unit:'g',fineness:999.9,price:0} : state.items[i];
+    $('dlgTitle').textContent = i==null ? 'Ajouter une pièce' : 'Modifier la pièce';
+    $('preset').value=''; $('preset').parentNode.hidden = i!=null;
+    $('name').value=it.name; $('metal').value=it.metal; $('qty').value=it.qty; $('weight').value=it.weight;
+    $('unit').value=it.unit; $('fineness').value=it.fineness; $('price').value=it.price;
+    $('delBtn').hidden = i==null;
+    dlg.showModal();
+  }
+  $('addBtn').onclick=function(){openForm(null)};
+  $('cancelBtn').onclick=function(){dlg.close()};
+  $('list').addEventListener('click',function(e){
+    var b=e.target.closest('.item'); if(b) openForm(+b.dataset.i);
+  });
+  $('form').addEventListener('submit',function(e){
+    e.preventDefault();
+    var it={
+      name:$('name').value.trim(), metal:$('metal').value, qty:parseInt($('qty').value,10)||1,
+      weight:parseFloat($('weight').value)||0, unit:$('unit').value,
+      fineness:parseFloat($('fineness').value)||0, price:parseFloat($('price').value)||0
+    };
+    if(editing==null) state.items.push(it); else state.items[editing]=it;
+    save(); render(); dlg.close();
+  });
+  $('delBtn').onclick=function(){
+    if(editing!=null && confirm('Supprimer « '+state.items[editing].name+' » ?')){
+      state.items.splice(editing,1); save(); render(); dlg.close();
+    }
+  };
+
+  // Sauvegarde
+  $('exportBtn').onclick=function(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='coffre-sauvegarde-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('importBtn').onclick=function(){$('importFile').click()};
+  $('importFile').addEventListener('change',function(){
+    var f=this.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var s=JSON.parse(r.result);
+        if(!s.items||!s.spots) throw 0;
+        if(confirm('Remplacer les données actuelles par cette sauvegarde ?')){state=s; save(); location.reload();}
+      }catch(e){alert('Ce fichier n’est pas une sauvegarde valide.')}
+    };
+    r.readAsText(f);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
