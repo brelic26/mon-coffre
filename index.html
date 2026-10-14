@@ -248,12 +248,12 @@ footer{margin-top:36px}
   var spots=$('spots');
   Object.keys(METALS).forEach(function(k){
     var l=document.createElement('label');
-    l.innerHTML=METALS[k].label+' (€/oz)<input type="number" min="0" step="any" inputmode="decimal" data-k="'+k+'" value="'+(state.spots[k]||'')+'" placeholder="0">';
+    l.innerHTML=METALS[k].label+' (€/g)<input type="number" min="0" step="any" inputmode="decimal" data-k="'+k+'" value="'+perG(state.spots[k])+'" placeholder="0">';
     spots.appendChild(l);
   });
   spots.addEventListener('input',function(e){
     var k=e.target.dataset.k; if(!k) return;
-    state.spots[k]=parseFloat(e.target.value)||0;
+    state.spots[k]=(parseFloat(e.target.value)||0)*OZ;
     state.updated=new Date().toISOString();
     save(); render();
     setStatus('Cours saisi à la main. Il sera remplacé à la prochaine actualisation en direct.');
@@ -278,9 +278,14 @@ footer{margin-top:36px}
   function setStatus(msg,ok){
     var h=$('spotHint'); h.textContent=msg; h.style.color = ok===false ? 'var(--loss)' : '';
   }
+  function perG(p){
+    if(!p) return '';
+    var g=p/OZ;
+    return g>=10 ? g.toFixed(2) : g.toFixed(3);
+  }
   function syncInputs(){
     Array.prototype.forEach.call(spots.querySelectorAll('input'),function(i){
-      if(document.activeElement!==i) i.value=state.spots[i.dataset.k]||'';
+      if(document.activeElement!==i) i.value=perG(state.spots[i.dataset.k]);
     });
   }
   function refresh(){
@@ -298,7 +303,7 @@ footer{margin-top:36px}
       if(!n) throw new Error('vide');
       state.updated=new Date().toISOString();
       save(); syncInputs(); render();
-      setStatus('Cours en direct (€ par once troy), actualisés à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.');
+      setStatus('Cours en direct (€ par gramme de métal pur), actualisés à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.');
     }).catch(function(){
       var last = state.updated ? ' Derniers cours enregistrés : '+new Date(state.updated).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'.' : '';
       setStatus('Cours en direct indisponibles pour le moment.'+last+' Vérifiez votre connexion, ou saisissez les cours à la main.',false);
